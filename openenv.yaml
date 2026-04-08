@@ -23,7 +23,7 @@ tasks:
     difficulty: hard
     description: Three competing threats with poor certainty and tight offset limits.
 api:
-  reset: /reset/{task_id}
+  reset: /reset
   step: /step
   state: /state
   grade: /grade

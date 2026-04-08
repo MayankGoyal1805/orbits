@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from server.app import close, grade, health, reset, state, step, task_detail, tasks
+from server.app import close, grade, health, reset, reset_default, state, step, task_detail, tasks
 from orbits_env.models import EnvironmentAction
 
 
@@ -17,7 +17,7 @@ def main() -> None:
     task_listing = tasks()
     assert "collision_avoidance_easy" in task_listing["tasks"]
 
-    observation = reset("collision_avoidance_easy")
+    observation = reset_default()
     assert observation["task_id"] == "collision_avoidance_easy"
 
     result = step(EnvironmentAction(action_type="request_tracking_update", magnitude=0.0))

@@ -46,6 +46,10 @@ class EnvironmentAction(BaseModel):
     magnitude: float = Field(default=0.0, ge=0.0, le=1.0)
 
 
+class ResetRequest(BaseModel):
+    task_id: str = "collision_avoidance_easy"
+
+
 class EnvironmentObservation(BaseModel):
     task_id: str
     step_index: int = Field(ge=0)

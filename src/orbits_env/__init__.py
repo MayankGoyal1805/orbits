@@ -7,6 +7,7 @@ from .models import (
     EnvironmentState,
     GeometryTag,
     MissionOffsets,
+    ResetRequest,
     StepResult,
     TaskConfig,
 )
@@ -19,6 +20,7 @@ __all__ = [
     "EnvironmentState",
     "GeometryTag",
     "MissionOffsets",
+    "ResetRequest",
     "SpaceDebrisEnv",
     "StepResult",
     "TaskConfig",

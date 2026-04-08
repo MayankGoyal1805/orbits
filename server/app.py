@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 
 from orbits_env.env import SpaceDebrisEnv
-from orbits_env.models import EnvironmentAction
+from orbits_env.models import EnvironmentAction, ResetRequest
 from orbits_env.tasks.catalog import TASKS
 
 app = FastAPI(title="Orbits OpenEnv", version="0.1.0")
@@ -40,12 +40,22 @@ def task_detail(task_id: str) -> dict:
     return task.model_dump()
 
 
-@app.post("/reset/{task_id}")
-def reset(task_id: str) -> dict:
+def _reset_env(task_id: str) -> dict:
     env = SpaceDebrisEnv(task_id=task_id)
     observation = env.reset()
     ENVIRONMENTS["default"] = env
     return observation.model_dump()
+
+
+@app.post("/reset")
+def reset_default(request: ResetRequest | None = None) -> dict:
+    task_id = request.task_id if request is not None else "collision_avoidance_easy"
+    return _reset_env(task_id)
+
+
+@app.post("/reset/{task_id}")
+def reset(task_id: str) -> dict:
+    return _reset_env(task_id)
 
 
 @app.post("/step")
