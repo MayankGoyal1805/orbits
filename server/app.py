@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
+import uvicorn
 
 from orbits_env.env import SpaceDebrisEnv
 from orbits_env.models import EnvironmentAction, ResetRequest
@@ -89,3 +90,11 @@ def close() -> dict[str, bool]:
     if env is not None:
         env.close()
     return {"closed": True}
+
+
+def main() -> None:
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860)
+
+
+if __name__ == "__main__":
+    main()
