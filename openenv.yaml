@@ -1,0 +1,31 @@
+name: orbits-openenv
+description: OpenEnv environment for space debris collision avoidance and conjunction management.
+version: 0.1.0
+benchmark: orbits-openenv
+entrypoint:
+  module: server.app
+  app: app
+environment:
+  package: orbits_env
+  class: SpaceDebrisEnv
+  observation_model: EnvironmentObservation
+  action_model: EnvironmentAction
+  state_model: EnvironmentState
+  reward_type: float
+tasks:
+  - id: collision_avoidance_easy
+    difficulty: easy
+    description: Single debris threat with high tracking quality and generous fuel.
+  - id: collision_avoidance_medium
+    difficulty: medium
+    description: Two threats with mixed maneuver geometry and tighter fuel.
+  - id: collision_avoidance_hard
+    difficulty: hard
+    description: Three competing threats with poor certainty and tight offset limits.
+api:
+  reset: /reset/{task_id}
+  step: /step
+  state: /state
+  grade: /grade
+  close: /close
+  health: /health
