@@ -102,6 +102,7 @@ export HF_TOKEN="<provider-api-key>"
 ```
 
 If `HF_TOKEN` is not set, `inference.py` falls back to the deterministic heuristic policy for local development.
+`LOCAL_IMAGE_NAME` is present in `inference.py` for checklist compatibility but is not used in the current local environment path.
 
 Run tests:
 

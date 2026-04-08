@@ -21,17 +21,15 @@ from orbits_env.models import ActionType, EnvironmentAction, EnvironmentObservat
 API_BASE_URL = os.getenv("API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
 MODEL_NAME = os.getenv("MODEL_NAME", "gemini-2.5-flash")
 API_KEY = os.getenv("HF_TOKEN")
-BENCHMARK = os.getenv("ORBITS_BENCHMARK", "orbits-openenv")
-MAX_STEPS = int(os.getenv("ORBITS_MAX_STEPS", "12"))
-TEMPERATURE = float(os.getenv("ORBITS_TEMPERATURE", "0.1"))
-ENABLE_HISTORY = os.getenv("ORBITS_ENABLE_HISTORY", "true").strip().lower() == "true"
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+BENCHMARK = "orbits-openenv"
+MAX_STEPS = 12
+TEMPERATURE = 0.1
+ENABLE_HISTORY = True
 TASK_IDS = [
-    task.strip()
-    for task in os.getenv(
-        "ORBITS_TASKS",
-        "collision_avoidance_easy,collision_avoidance_medium,collision_avoidance_hard",
-    ).split(",")
-    if task.strip()
+    "collision_avoidance_easy",
+    "collision_avoidance_medium",
+    "collision_avoidance_hard",
 ]
 
 SYSTEM_PROMPT = textwrap.dedent(
@@ -242,6 +240,7 @@ def run_task(task_id: str, client: OpenAI | None) -> None:
         score = env.grade()
         success = env.state().success
     finally:
+        env.close()
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
 
