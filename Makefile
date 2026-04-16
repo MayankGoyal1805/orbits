@@ -24,6 +24,7 @@ inference:
 	uv run python inference.py
 
 iterative-inference:
+	@echo "[MAKE-CONFIG] ITERATIVE_ROUNDS=$(ITERATIVE_ROUNDS) MODEL_NAME=$${MODEL_NAME:-<unset>} MAX_STEPS=$${MAX_STEPS:-<unset>}"
 	uv run python scripts/run_iterative_inference.py --rounds $(ITERATIVE_ROUNDS) --output $(ITERATIVE_JSON_OUTPUT) --text-output $(ITERATIVE_TEXT_OUTPUT)
 
 test:

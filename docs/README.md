@@ -17,6 +17,7 @@ If you are new to this repository, read in this order:
 11. `docs/10-env-vars-and-api-keys.md`
 12. `docs/11-troubleshooting.md`
 13. `docs/12-dataset-priors-and-iterative-option1.md`
+14. `docs/description.md`
 
 What these docs cover:
 

@@ -41,7 +41,11 @@ def _load_dataset_strategy_notes() -> list[str]:
     return notes
 
 
-def _reflection_notes(round_results: list[dict]) -> list[str]:
+def _reflection_notes(
+    round_results: list[dict],
+    round_index: int,
+    previous_summary: dict | None,
+) -> list[str]:
     notes: list[str] = []
     failed = [result for result in round_results if not result["success"]]
 
@@ -65,6 +69,33 @@ def _reflection_notes(round_results: list[dict]) -> list[str]:
             "Adaptive note: prioritize the top-risk event and reduce it below threshold before broad balancing maneuvers."
         )
 
+    if previous_summary is not None:
+        current_avg_score = float(mean(result["score"] for result in round_results)) if round_results else 0.0
+        current_avg_reward = float(mean(result["total_reward"] for result in round_results)) if round_results else 0.0
+        current_success_rate = (
+            sum(1 for result in round_results if result["success"]) / len(round_results)
+            if round_results
+            else 0.0
+        )
+
+        stagnated = (
+            round(current_avg_score, 4) == round(float(previous_summary.get("avg_score", 0.0)), 4)
+            and round(current_avg_reward, 4) == round(float(previous_summary.get("avg_total_reward", 0.0)), 4)
+            and round(current_success_rate, 4) == round(float(previous_summary.get("success_rate", 0.0)), 4)
+        )
+        if stagnated:
+            notes.append(
+                f"Exploration note for round {round_index + 1}: do not repeat the same first-step action for all tasks; prefer a maneuver action when highest_collision_probability > 0.24."
+            )
+
+            first_actions = {
+                str(result.get("first_action", "")) for result in round_results if str(result.get("first_action", ""))
+            }
+            if len(first_actions) == 1 and "request_tracking_update" in first_actions:
+                notes.append(
+                    "Exploration note: avoid request_tracking_update as the first move this round; choose one of radial_maneuver, along_track_maneuver, or normal_maneuver with magnitude 0.45 to 0.60."
+                )
+
     return notes
 
 
@@ -81,6 +112,33 @@ def _summarize_round(round_index: int, results: list[dict]) -> dict:
         "tasks": results,
     }
     return summary
+
+
+def _cross_round_memory_notes(previous_rounds: list[dict]) -> list[str]:
+    notes: list[str] = []
+    for summary in previous_rounds:
+        round_idx = int(summary.get("round", 0))
+        notes.append(
+            "Previous round summary "
+            f"(round {round_idx}): avg_score={float(summary.get('avg_score', 0.0)):.4f}, "
+            f"avg_total_reward={float(summary.get('avg_total_reward', 0.0)):.4f}, "
+            f"success_rate={float(summary.get('success_rate', 0.0)):.2f}."
+        )
+
+        task_snippets: list[str] = []
+        for task in summary.get("tasks", []):
+            task_snippets.append(
+                f"{task.get('task_id', 'unknown')}:"
+                f"success={task.get('success', False)},"
+                f"score={float(task.get('score', 0.0)):.4f},"
+                f"total_reward={float(task.get('total_reward', 0.0)):.4f},"
+                f"first_action={task.get('first_action', '') or 'n/a'}"
+            )
+        if task_snippets:
+            notes.append(
+                f"Previous round {round_idx} task outcomes: " + " | ".join(task_snippets)
+            )
+    return notes
 
 
 def _write_text_report(
@@ -152,6 +210,21 @@ def main() -> None:
     if args.rounds < 1:
         raise ValueError("--rounds must be >= 1")
 
+    print(
+        f"[CONFIG] requested_rounds={args.rounds} model={inference.MODEL_NAME} max_steps={inference.MAX_STEPS}",
+        flush=True,
+    )
+    if args.rounds == 1:
+        print(
+            "[INFO] Running a single round. If this is unexpected, check ITERATIVE_ROUNDS/ITERABLE_ROUNDS overrides.",
+            flush=True,
+        )
+    if args.rounds > 1 and inference.MAX_STEPS <= 1:
+        print(
+            "[WARN] MAX_STEPS is 1. Multi-round adaptation is heavily constrained and rounds may look identical.",
+            flush=True,
+        )
+
     client = OpenAI(base_url=inference.API_BASE_URL, api_key=inference.API_KEY) if inference.API_KEY else None
     client_mode = "llm" if client is not None else "fallback-heuristic"
     print(f"[MODE] client_mode={client_mode}", flush=True)
@@ -159,8 +232,12 @@ def main() -> None:
     if client is None and not inference.ALLOW_HEURISTIC_FALLBACK:
         raise RuntimeError(
             "LLM client is unavailable and fallback is disabled. "
-            "Set HF_TOKEN/API_BASE_URL/MODEL_NAME (for LLM mode) or explicitly set ALLOW_HEURISTIC_FALLBACK=1."
+            "Set one of (HF_TOKEN, OPENAI_API_KEY, GROQ_API_KEY, API_KEY) plus API_BASE_URL and MODEL_NAME, "
+            "or explicitly set ALLOW_HEURISTIC_FALLBACK=1."
         )
+
+    if client is not None:
+        inference._validate_model_availability(client)
 
     if client is None:
         print(
@@ -208,8 +285,16 @@ def main() -> None:
             flush=True,
         )
 
-        # Keep dataset priors as base context and append latest adaptive reflection notes.
-        strategy_memory = _load_dataset_strategy_notes() + _reflection_notes(round_results)
+        # Keep dataset priors as base context, include all previous round data/rewards,
+        # and append latest adaptive reflection notes.
+        previous_summary = all_rounds[-2] if len(all_rounds) >= 2 else None
+        prior_round_data_notes = _cross_round_memory_notes(all_rounds)
+        reflection_notes = _reflection_notes(
+            round_results,
+            round_idx,
+            previous_summary,
+        )
+        strategy_memory = _load_dataset_strategy_notes() + prior_round_data_notes + reflection_notes
 
     best_round = (
         max(all_rounds, key=lambda item: (item["success_rate"], item["avg_score"]))

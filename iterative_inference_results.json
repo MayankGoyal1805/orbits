@@ -14,6 +14,7 @@
           "success": false,
           "score": 0.6397,
           "steps": 4,
+          "first_action": "request_tracking_update",
           "total_reward": 1.2635,
           "rewards": [
             0.3739,
@@ -32,6 +33,7 @@
           "success": false,
           "score": 0.5571,
           "steps": 6,
+          "first_action": "request_tracking_update",
           "total_reward": 1.6924,
           "rewards": [
             0.4002,
@@ -52,6 +54,7 @@
           "success": false,
           "score": 0.4384,
           "steps": 7,
+          "first_action": "request_tracking_update",
           "total_reward": 1.9729,
           "rewards": [
             0.4644,
@@ -72,8 +75,8 @@
     },
     {
       "round": 2,
-      "avg_score": 0.5458,
-      "avg_total_reward": 1.6433,
+      "avg_score": 0.553,
+      "avg_total_reward": 1.6867,
       "success_rate": 0.0,
       "tasks": [
         {
@@ -81,6 +84,7 @@
           "success": false,
           "score": 0.6397,
           "steps": 4,
+          "first_action": "request_tracking_update",
           "total_reward": 1.2635,
           "rewards": [
             0.3739,
@@ -99,6 +103,7 @@
           "success": false,
           "score": 0.5571,
           "steps": 6,
+          "first_action": "request_tracking_update",
           "total_reward": 1.6924,
           "rewards": [
             0.4002,
@@ -117,30 +122,31 @@
         {
           "task_id": "collision_avoidance_hard",
           "success": false,
-          "score": 0.4405,
+          "score": 0.4621,
           "steps": 7,
-          "total_reward": 1.974,
+          "first_action": "request_tracking_update",
+          "total_reward": 2.1043,
           "rewards": [
             0.4644,
-            0.1815,
-            0.4036,
-            0.1581,
-            0.3752,
-            0.1312,
+            0.4019,
+            0.3734,
+            0.2199,
+            0.26,
+            0.1247,
             0.26
           ],
           "termination_reason": "horizon_reached",
-          "highest_collision_probability": 0.4795,
-          "total_offset_km": 0.6701,
-          "fuel_remaining": 4.455,
+          "highest_collision_probability": 0.5224,
+          "total_offset_km": 0.5264,
+          "fuel_remaining": 5.14,
           "tracking_updates_used": 3
         }
       ]
     },
     {
       "round": 3,
-      "avg_score": 0.5458,
-      "avg_total_reward": 1.6433,
+      "avg_score": 0.5604,
+      "avg_total_reward": 1.7286,
       "success_rate": 0.0,
       "tasks": [
         {
@@ -148,6 +154,7 @@
           "success": false,
           "score": 0.6397,
           "steps": 4,
+          "first_action": "request_tracking_update",
           "total_reward": 1.2635,
           "rewards": [
             0.3739,
@@ -164,51 +171,53 @@
         {
           "task_id": "collision_avoidance_medium",
           "success": false,
-          "score": 0.5571,
+          "score": 0.5793,
           "steps": 6,
-          "total_reward": 1.6924,
+          "first_action": "request_tracking_update",
+          "total_reward": 1.818,
           "rewards": [
             0.4002,
-            0.246,
-            0.3774,
-            0.2255,
+            0.3778,
             0.26,
-            0.1833
+            0.26,
+            0.26,
+            0.26
           ],
           "termination_reason": "horizon_reached",
-          "highest_collision_probability": 0.365,
-          "total_offset_km": 0.7456,
-          "fuel_remaining": 5.53,
+          "highest_collision_probability": 0.5103,
+          "total_offset_km": 0.0,
+          "fuel_remaining": 7.72,
           "tracking_updates_used": 2
         },
         {
           "task_id": "collision_avoidance_hard",
           "success": false,
-          "score": 0.4405,
+          "score": 0.4621,
           "steps": 7,
-          "total_reward": 1.974,
+          "first_action": "request_tracking_update",
+          "total_reward": 2.1043,
           "rewards": [
             0.4644,
-            0.1815,
-            0.4036,
-            0.1581,
-            0.3752,
-            0.1312,
+            0.4019,
+            0.3734,
+            0.2199,
+            0.26,
+            0.1247,
             0.26
           ],
           "termination_reason": "horizon_reached",
-          "highest_collision_probability": 0.4795,
-          "total_offset_km": 0.6701,
-          "fuel_remaining": 4.455,
+          "highest_collision_probability": 0.5224,
+          "total_offset_km": 0.5264,
+          "fuel_remaining": 5.14,
           "tracking_updates_used": 3
         }
       ]
     }
   ],
   "best_round": {
-    "round": 2,
-    "avg_score": 0.5458,
-    "avg_total_reward": 1.6433,
+    "round": 3,
+    "avg_score": 0.5604,
+    "avg_total_reward": 1.7286,
     "success_rate": 0.0,
     "tasks": [
       {
@@ -216,6 +225,7 @@
         "success": false,
         "score": 0.6397,
         "steps": 4,
+        "first_action": "request_tracking_update",
         "total_reward": 1.2635,
         "rewards": [
           0.3739,
@@ -232,42 +242,44 @@
       {
         "task_id": "collision_avoidance_medium",
         "success": false,
-        "score": 0.5571,
+        "score": 0.5793,
         "steps": 6,
-        "total_reward": 1.6924,
+        "first_action": "request_tracking_update",
+        "total_reward": 1.818,
         "rewards": [
           0.4002,
-          0.246,
-          0.3774,
-          0.2255,
+          0.3778,
           0.26,
-          0.1833
+          0.26,
+          0.26,
+          0.26
         ],
         "termination_reason": "horizon_reached",
-        "highest_collision_probability": 0.365,
-        "total_offset_km": 0.7456,
-        "fuel_remaining": 5.53,
+        "highest_collision_probability": 0.5103,
+        "total_offset_km": 0.0,
+        "fuel_remaining": 7.72,
         "tracking_updates_used": 2
       },
       {
         "task_id": "collision_avoidance_hard",
         "success": false,
-        "score": 0.4405,
+        "score": 0.4621,
         "steps": 7,
-        "total_reward": 1.974,
+        "first_action": "request_tracking_update",
+        "total_reward": 2.1043,
         "rewards": [
           0.4644,
-          0.1815,
-          0.4036,
-          0.1581,
-          0.3752,
-          0.1312,
+          0.4019,
+          0.3734,
+          0.2199,
+          0.26,
+          0.1247,
           0.26
         ],
         "termination_reason": "horizon_reached",
-        "highest_collision_probability": 0.4795,
-        "total_offset_km": 0.6701,
-        "fuel_remaining": 4.455,
+        "highest_collision_probability": 0.5224,
+        "total_offset_km": 0.5264,
+        "fuel_remaining": 5.14,
         "tracking_updates_used": 3
       }
     ]
