@@ -113,7 +113,13 @@ export MODEL_NAME="gemini-2.5-flash"
 export HF_TOKEN="<provider-api-key>"
 ```
 
-If `HF_TOKEN` is not set, `inference.py` falls back to the deterministic heuristic policy for local development.
+`inference.py` now runs in strict LLM mode by default. If `HF_TOKEN` is missing (or API config is invalid), it raises an error.
+Heuristic fallback is available only with explicit opt-in:
+
+```bash
+export ALLOW_HEURISTIC_FALLBACK=1
+```
+
 `LOCAL_IMAGE_NAME` is present in `inference.py` for checklist compatibility but is not used in the current local environment path.
 
 `inference.py` optionally loads a local `.env` file for convenience, but production/submission environments with pre-set variables remain the primary source of truth.

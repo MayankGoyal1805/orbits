@@ -76,6 +76,10 @@ These values modify task setup before simulation begins, so the same simulator l
 4. Selection:
 - best round chosen by `(success_rate, avg_score)`
 
+5. Detailed output artifacts:
+- JSON summary output (round metrics + best-round payload)
+- Text report output (`output.txt`) with full per-step logs for all tasks and rounds
+
 This is context-level adaptation, not weight-level RL.
 
 ## Observed Run Example
@@ -107,10 +111,18 @@ Iterative Option 1 inference:
 make iterative-inference
 ```
 
+Specify how many rounds to run and output file paths:
+
+```bash
+make iterative-inference ITERATIVE_ROUNDS=5 ITERATIVE_JSON_OUTPUT=iterative_inference_results.json ITERATIVE_TEXT_OUTPUT=output.txt
+```
+
+`ITERABLE_ROUNDS` (common typo) is also accepted as an alias in `Makefile`.
+
 Custom rounds/output:
 
 ```bash
-uv run python scripts/run_iterative_inference.py --rounds 2 --output iterative_inference_results.json
+uv run python scripts/run_iterative_inference.py --rounds 2 --output iterative_inference_results.json --text-output output.txt
 ```
 
 ## Notes
@@ -118,3 +130,7 @@ uv run python scripts/run_iterative_inference.py --rounds 2 --output iterative_i
 - If priors JSON is missing or invalid, catalog falls back to default tasks.
 - You can override priors path with `ORBITS_TASK_PRIORS_PATH`.
 - Iterative output writing now falls back to a local file if target path is not writable.
+- The runner now writes metadata to `output.txt`: requested rounds, executed rounds, and client mode (`llm` vs `fallback-heuristic`).
+- By default, iterative runs require LLM credentials and fail fast if unavailable.
+- If you explicitly set `ALLOW_HEURISTIC_FALLBACK=1`, client mode can become `fallback-heuristic`; in that mode identical rounds are expected because baseline policy is deterministic and does not adapt from prompt memory.
+- `success_rate` is computed as `successful_tasks / total_tasks` for each round (for 3 tasks, `1.00` means `3/3`).

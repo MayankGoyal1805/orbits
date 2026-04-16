@@ -1,5 +1,13 @@
 .PHONY: sync build-priors baseline baseline-save inference iterative-inference test serve smoke docker-build docker-run validate
 
+ifdef ITERABLE_ROUNDS
+ITERATIVE_ROUNDS := $(ITERABLE_ROUNDS)
+else
+ITERATIVE_ROUNDS ?= 3
+endif
+ITERATIVE_JSON_OUTPUT ?= iterative_inference_results.json
+ITERATIVE_TEXT_OUTPUT ?= output.txt
+
 sync:
 	uv sync
 
@@ -16,7 +24,7 @@ inference:
 	uv run python inference.py
 
 iterative-inference:
-	uv run python scripts/run_iterative_inference.py --rounds 3 --output iterative_inference_results.json
+	uv run python scripts/run_iterative_inference.py --rounds $(ITERATIVE_ROUNDS) --output $(ITERATIVE_JSON_OUTPUT) --text-output $(ITERATIVE_TEXT_OUTPUT)
 
 test:
 	uv run pytest

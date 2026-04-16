@@ -17,6 +17,8 @@ This note is presentation-oriented and describes what is now actually implemente
 - script: `scripts/run_iterative_inference.py`
 - command: `make iterative-inference`
 - performs multi-round run + reflection notes + best-round selection
+- round count is configurable (`ITERATIVE_ROUNDS=<n>`)
+- writes detailed step-by-step report to `output.txt`
 
 ## How Datasets Are Used Exactly
 

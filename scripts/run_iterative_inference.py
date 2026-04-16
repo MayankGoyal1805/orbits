@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import io
+from contextlib import redirect_stdout
 import json
 import sys
 from pathlib import Path
@@ -81,6 +83,55 @@ def _summarize_round(round_index: int, results: list[dict]) -> dict:
     return summary
 
 
+def _write_text_report(
+    path: Path,
+    round_reports: list[dict],
+    best_round: dict | None,
+    requested_rounds: int,
+    executed_rounds: int,
+    client_mode: str,
+) -> None:
+    lines: list[str] = []
+    lines.append("Iterative Inference Detailed Report")
+    lines.append("=" * 34)
+    lines.append(f"requested_rounds: {requested_rounds}")
+    lines.append(f"executed_rounds: {executed_rounds}")
+    lines.append(f"client_mode: {client_mode}")
+    lines.append("")
+
+    for report in round_reports:
+        summary = report["summary"]
+        lines.append(f"ROUND {summary['round']}")
+        lines.append("-" * 10)
+        lines.append(f"strategy_notes_count: {len(report['strategy_notes'])}")
+        for note in report["strategy_notes"]:
+            lines.append(f"  - {note}")
+        lines.append("")
+        lines.append("task step logs:")
+        for block in report["task_logs"]:
+            lines.append(block.rstrip())
+        lines.append("")
+        lines.append(
+            f"round_summary: avg_score={summary['avg_score']:.4f} "
+            f"avg_total_reward={summary['avg_total_reward']:.4f} "
+            f"success_rate={summary['success_rate']:.2f}"
+        )
+        task_successes = sum(1 for result in summary["tasks"] if result["success"])
+        lines.append(f"success_count: {task_successes}/{len(summary['tasks'])}")
+        lines.append("")
+
+    if best_round is not None:
+        lines.append("BEST ROUND")
+        lines.append("-" * 10)
+        lines.append(
+            f"round={best_round['round']} avg_score={best_round['avg_score']:.4f} "
+            f"success_rate={best_round['success_rate']:.2f}"
+        )
+        lines.append("")
+
+    path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run iterative self-improvement inference rounds.")
     parser.add_argument("--rounds", type=int, default=3, help="Number of iterative rounds to run.")
@@ -90,27 +141,67 @@ def main() -> None:
         default=Path("outputs/evals/iterative_inference_results.json"),
         help="Output JSON for per-round summaries.",
     )
+    parser.add_argument(
+        "--text-output",
+        type=Path,
+        default=Path("output.txt"),
+        help="Detailed human-readable run log and summary output.",
+    )
     args = parser.parse_args()
 
+    if args.rounds < 1:
+        raise ValueError("--rounds must be >= 1")
+
     client = OpenAI(base_url=inference.API_BASE_URL, api_key=inference.API_KEY) if inference.API_KEY else None
+    client_mode = "llm" if client is not None else "fallback-heuristic"
+    print(f"[MODE] client_mode={client_mode}", flush=True)
+
+    if client is None and not inference.ALLOW_HEURISTIC_FALLBACK:
+        raise RuntimeError(
+            "LLM client is unavailable and fallback is disabled. "
+            "Set HF_TOKEN/API_BASE_URL/MODEL_NAME (for LLM mode) or explicitly set ALLOW_HEURISTIC_FALLBACK=1."
+        )
+
+    if client is None:
+        print(
+            "[WARN] HF_TOKEN/API credentials were not loaded; iterative rounds will use deterministic fallback policy.",
+            flush=True,
+        )
+
     strategy_memory = _load_dataset_strategy_notes()
     all_rounds: list[dict] = []
+    round_reports: list[dict] = []
 
     for round_idx in range(1, args.rounds + 1):
         print(f"[ROUND] index={round_idx} strategy_notes={len(strategy_memory)}", flush=True)
         round_results: list[dict] = []
+        round_task_logs: list[str] = []
 
         for task_id in inference.TASK_IDS:
-            result = inference.run_task(
-                task_id=task_id,
-                client=client,
-                strategy_memory=strategy_memory,
-                emit_logs=True,
-            )
+            log_buffer = io.StringIO()
+            with redirect_stdout(log_buffer):
+                result = inference.run_task(
+                    task_id=task_id,
+                    client=client,
+                    strategy_memory=strategy_memory,
+                    emit_logs=True,
+                )
+
+            task_log = log_buffer.getvalue()
+            if task_log:
+                print(task_log, end="", flush=True)
+                round_task_logs.append(task_log)
             round_results.append(result)
 
         summary = _summarize_round(round_idx, round_results)
         all_rounds.append(summary)
+        round_reports.append(
+            {
+                "summary": summary,
+                "strategy_notes": list(strategy_memory),
+                "task_logs": round_task_logs,
+            }
+        )
         print(
             f"[ROUND-END] index={round_idx} avg_score={summary['avg_score']:.4f} "
             f"success_rate={summary['success_rate']:.2f}",
@@ -126,23 +217,64 @@ def main() -> None:
         else None
     )
     payload = {
+        "requested_rounds": args.rounds,
+        "executed_rounds": len(all_rounds),
+        "client_mode": client_mode,
         "rounds": all_rounds,
         "best_round": best_round,
     }
 
+    if len(all_rounds) >= 2:
+        first = all_rounds[0]
+        all_same = all(
+            round_item["avg_score"] == first["avg_score"]
+            and round_item["avg_total_reward"] == first["avg_total_reward"]
+            and round_item["success_rate"] == first["success_rate"]
+            for round_item in all_rounds[1:]
+        )
+        if all_same:
+            print(
+                "[WARN] All rounds produced identical summary metrics. "
+                "This is expected in fallback-heuristic mode and may also happen when prompts do not change behavior.",
+                flush=True,
+            )
+
     write_path = args.output
+    text_write_path = args.text_output
     try:
         write_path.parent.mkdir(parents=True, exist_ok=True)
         write_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        text_write_path.parent.mkdir(parents=True, exist_ok=True)
+        _write_text_report(
+            text_write_path,
+            round_reports,
+            best_round,
+            requested_rounds=args.rounds,
+            executed_rounds=len(all_rounds),
+            client_mode=client_mode,
+        )
     except PermissionError:
         write_path = Path("iterative_inference_results.json")
         write_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        print(f"[WARN] Could not write to {args.output}; wrote to {write_path} instead.", flush=True)
+        text_write_path = Path("output.txt")
+        _write_text_report(
+            text_write_path,
+            round_reports,
+            best_round,
+            requested_rounds=args.rounds,
+            executed_rounds=len(all_rounds),
+            client_mode=client_mode,
+        )
+        print(
+            f"[WARN] Could not write to requested output path(s); "
+            f"wrote JSON to {write_path} and text report to {text_write_path} instead.",
+            flush=True,
+        )
 
     if best_round is not None:
         print(
             f"[BEST] round={best_round['round']} avg_score={best_round['avg_score']:.4f} "
-            f"success_rate={best_round['success_rate']:.2f} output={write_path}",
+            f"success_rate={best_round['success_rate']:.2f} json_output={write_path} text_output={text_write_path}",
             flush=True,
         )
 

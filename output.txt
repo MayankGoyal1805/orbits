@@ -1,0 +1,121 @@
+Iterative Inference Detailed Report
+==================================
+requested_rounds: 3
+executed_rounds: 3
+client_mode: llm
+
+ROUND 1
+----------
+strategy_notes_count: 4
+  - Dataset prior: debris ratio is 0.52; prioritize early risk reduction.
+  - Dataset prior: LEO ratio is 0.90; expect dense conjunction pressure.
+  - Dataset prior: risk scale is 1.17; avoid passive noop under moderate/high risk.
+  - Dataset prior: uncertainty scale is 1.05; spend tracking budget early when uncertainty remains high.
+
+task step logs:
+[START] task=collision_avoidance_easy env=orbits-openenv model=llama-3.1-8b-instant-with-history
+[STEP] step=1 action=request_tracking_update reward=0.37 done=false error=null
+[STEP] step=2 action=request_tracking_update reward=0.37 done=false error=null
+[STEP] step=3 action=request_tracking_update reward=0.26 done=false error=tracking_budget_exhausted
+[STEP] step=4 action=request_tracking_update reward=0.26 done=true error=tracking_budget_exhausted
+[END] success=false steps=4 score=0.640 rewards=0.37,0.37,0.26,0.26
+[START] task=collision_avoidance_medium env=orbits-openenv model=llama-3.1-8b-instant-with-history
+[STEP] step=1 action=request_tracking_update reward=0.40 done=false error=null
+[STEP] step=2 action=radial_maneuver(0.50) reward=0.25 done=false error=null
+[STEP] step=3 action=request_tracking_update reward=0.38 done=false error=null
+[STEP] step=4 action=radial_maneuver(0.50) reward=0.23 done=false error=null
+[STEP] step=5 action=request_tracking_update reward=0.26 done=false error=tracking_budget_exhausted
+[STEP] step=6 action=radial_maneuver(0.50) reward=0.18 done=true error=null
+[END] success=false steps=6 score=0.557 rewards=0.40,0.25,0.38,0.23,0.26,0.18
+[START] task=collision_avoidance_hard env=orbits-openenv model=llama-3.1-8b-instant-with-history
+[STEP] step=1 action=request_tracking_update reward=0.46 done=false error=null
+[STEP] step=2 action=radial_maneuver(0.50) reward=0.19 done=false error=null
+[STEP] step=3 action=request_tracking_update reward=0.40 done=false error=null
+[STEP] step=4 action=radial_maneuver(0.50) reward=0.16 done=false error=null
+[STEP] step=5 action=request_tracking_update reward=0.37 done=false error=null
+[STEP] step=6 action=radial_maneuver(0.50) reward=0.13 done=false error=null
+[STEP] step=7 action=request_tracking_update reward=0.26 done=true error=tracking_budget_exhausted
+[END] success=false steps=7 score=0.438 rewards=0.46,0.19,0.40,0.16,0.37,0.13,0.26
+
+round_summary: avg_score=0.5451 avg_total_reward=1.6429 success_rate=0.00
+success_count: 0/3
+
+ROUND 2
+----------
+strategy_notes_count: 6
+  - Dataset prior: debris ratio is 0.52; prioritize early risk reduction.
+  - Dataset prior: LEO ratio is 0.90; expect dense conjunction pressure.
+  - Dataset prior: risk scale is 1.17; avoid passive noop under moderate/high risk.
+  - Dataset prior: uncertainty scale is 1.05; spend tracking budget early when uncertainty remains high.
+  - Adaptive note: if highest_collision_probability exceeds 0.22, avoid noop and use moderate maneuver magnitude (0.45 to 0.6).
+  - Adaptive note: prioritize the top-risk event and reduce it below threshold before broad balancing maneuvers.
+
+task step logs:
+[START] task=collision_avoidance_easy env=orbits-openenv model=llama-3.1-8b-instant-with-history
+[STEP] step=1 action=request_tracking_update reward=0.37 done=false error=null
+[STEP] step=2 action=request_tracking_update reward=0.37 done=false error=null
+[STEP] step=3 action=request_tracking_update reward=0.26 done=false error=tracking_budget_exhausted
+[STEP] step=4 action=request_tracking_update reward=0.26 done=true error=tracking_budget_exhausted
+[END] success=false steps=4 score=0.640 rewards=0.37,0.37,0.26,0.26
+[START] task=collision_avoidance_medium env=orbits-openenv model=llama-3.1-8b-instant-with-history
+[STEP] step=1 action=request_tracking_update reward=0.40 done=false error=null
+[STEP] step=2 action=radial_maneuver(0.50) reward=0.25 done=false error=null
+[STEP] step=3 action=request_tracking_update reward=0.38 done=false error=null
+[STEP] step=4 action=radial_maneuver(0.50) reward=0.23 done=false error=null
+[STEP] step=5 action=request_tracking_update reward=0.26 done=false error=tracking_budget_exhausted
+[STEP] step=6 action=radial_maneuver(0.50) reward=0.18 done=true error=null
+[END] success=false steps=6 score=0.557 rewards=0.40,0.25,0.38,0.23,0.26,0.18
+[START] task=collision_avoidance_hard env=orbits-openenv model=llama-3.1-8b-instant-with-history
+[STEP] step=1 action=request_tracking_update reward=0.46 done=false error=null
+[STEP] step=2 action=radial_maneuver(0.45) reward=0.18 done=false error=null
+[STEP] step=3 action=request_tracking_update reward=0.40 done=false error=null
+[STEP] step=4 action=radial_maneuver(0.45) reward=0.16 done=false error=null
+[STEP] step=5 action=request_tracking_update reward=0.38 done=false error=null
+[STEP] step=6 action=radial_maneuver(0.45) reward=0.13 done=false error=null
+[STEP] step=7 action=request_tracking_update reward=0.26 done=true error=tracking_budget_exhausted
+[END] success=false steps=7 score=0.441 rewards=0.46,0.18,0.40,0.16,0.38,0.13,0.26
+
+round_summary: avg_score=0.5458 avg_total_reward=1.6433 success_rate=0.00
+success_count: 0/3
+
+ROUND 3
+----------
+strategy_notes_count: 6
+  - Dataset prior: debris ratio is 0.52; prioritize early risk reduction.
+  - Dataset prior: LEO ratio is 0.90; expect dense conjunction pressure.
+  - Dataset prior: risk scale is 1.17; avoid passive noop under moderate/high risk.
+  - Dataset prior: uncertainty scale is 1.05; spend tracking budget early when uncertainty remains high.
+  - Adaptive note: if highest_collision_probability exceeds 0.22, avoid noop and use moderate maneuver magnitude (0.45 to 0.6).
+  - Adaptive note: prioritize the top-risk event and reduce it below threshold before broad balancing maneuvers.
+
+task step logs:
+[START] task=collision_avoidance_easy env=orbits-openenv model=llama-3.1-8b-instant-with-history
+[STEP] step=1 action=request_tracking_update reward=0.37 done=false error=null
+[STEP] step=2 action=request_tracking_update reward=0.37 done=false error=null
+[STEP] step=3 action=request_tracking_update reward=0.26 done=false error=tracking_budget_exhausted
+[STEP] step=4 action=request_tracking_update reward=0.26 done=true error=tracking_budget_exhausted
+[END] success=false steps=4 score=0.640 rewards=0.37,0.37,0.26,0.26
+[START] task=collision_avoidance_medium env=orbits-openenv model=llama-3.1-8b-instant-with-history
+[STEP] step=1 action=request_tracking_update reward=0.40 done=false error=null
+[STEP] step=2 action=radial_maneuver(0.50) reward=0.25 done=false error=null
+[STEP] step=3 action=request_tracking_update reward=0.38 done=false error=null
+[STEP] step=4 action=radial_maneuver(0.50) reward=0.23 done=false error=null
+[STEP] step=5 action=request_tracking_update reward=0.26 done=false error=tracking_budget_exhausted
+[STEP] step=6 action=radial_maneuver(0.50) reward=0.18 done=true error=null
+[END] success=false steps=6 score=0.557 rewards=0.40,0.25,0.38,0.23,0.26,0.18
+[START] task=collision_avoidance_hard env=orbits-openenv model=llama-3.1-8b-instant-with-history
+[STEP] step=1 action=request_tracking_update reward=0.46 done=false error=null
+[STEP] step=2 action=radial_maneuver(0.45) reward=0.18 done=false error=null
+[STEP] step=3 action=request_tracking_update reward=0.40 done=false error=null
+[STEP] step=4 action=radial_maneuver(0.45) reward=0.16 done=false error=null
+[STEP] step=5 action=request_tracking_update reward=0.38 done=false error=null
+[STEP] step=6 action=radial_maneuver(0.45) reward=0.13 done=false error=null
+[STEP] step=7 action=request_tracking_update reward=0.26 done=true error=tracking_budget_exhausted
+[END] success=false steps=7 score=0.441 rewards=0.46,0.18,0.40,0.16,0.38,0.13,0.26
+
+round_summary: avg_score=0.5458 avg_total_reward=1.6433 success_rate=0.00
+success_count: 0/3
+
+BEST ROUND
+----------
+round=2 avg_score=0.5458 success_rate=0.00

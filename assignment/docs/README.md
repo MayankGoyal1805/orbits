@@ -9,6 +9,7 @@ Recommended reading order:
 3. `assignment/docs/03-linking-eda-to-openenv.md`
 4. `assignment/docs/04-presentation-guide.md`
 5. `assignment/docs/05-option1-implemented.md`
+6. `assignment/docs/description.md`
 
 What you get here:
 

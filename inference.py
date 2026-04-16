@@ -68,6 +68,16 @@ LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 BENCHMARK = "orbits-openenv"
 MAX_STEPS = int(os.getenv("MAX_STEPS", "12"))
 REQUESTS_PER_MINUTE = max(1, int(os.getenv("REQUESTS_PER_MINUTE", "30")))
+REQUEST_GAP_SECONDS = max(0.0, float(os.getenv("REQUEST_GAP_SECONDS", "2.5")))
+MAX_LLM_RETRIES = max(0, int(os.getenv("MAX_LLM_RETRIES", "2")))
+RETRY_BACKOFF_SECONDS = max(0.0, float(os.getenv("RETRY_BACKOFF_SECONDS", "1.5")))
+MAX_RESPONSE_TOKENS = max(32, int(os.getenv("MAX_RESPONSE_TOKENS", "120")))
+ALLOW_HEURISTIC_FALLBACK = os.getenv("ALLOW_HEURISTIC_FALLBACK", "0").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 TEMPERATURE = 0.1
 ENABLE_HISTORY = True
 TASK_IDS = [
@@ -203,32 +213,44 @@ def _llm_action(
 ) -> EnvironmentAction:
     global _LAST_REQUEST_TS
 
-    min_interval_seconds = 60.0 / REQUESTS_PER_MINUTE
-    now = time.monotonic()
-    if _LAST_REQUEST_TS is not None:
-        elapsed = now - _LAST_REQUEST_TS
-        if elapsed < min_interval_seconds:
-            time.sleep(min_interval_seconds - elapsed)
-    _LAST_REQUEST_TS = time.monotonic()
+    min_interval_seconds = max(60.0 / REQUESTS_PER_MINUTE, REQUEST_GAP_SECONDS)
 
-    completion = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": (
-                    _build_feedback_prompt(observation, history, strategy_memory)
-                    if ENABLE_HISTORY
-                    else _build_basic_prompt(observation)
-                ),
-            },
-        ],
-        temperature=TEMPERATURE,
-        response_format={"type": "json_object"},
-    )
-    content = (completion.choices[0].message.content or "").strip()
-    return _parse_action(content)
+    for attempt in range(MAX_LLM_RETRIES + 1):
+        now = time.monotonic()
+        if _LAST_REQUEST_TS is not None:
+            elapsed = now - _LAST_REQUEST_TS
+            if elapsed < min_interval_seconds:
+                time.sleep(min_interval_seconds - elapsed)
+        _LAST_REQUEST_TS = time.monotonic()
+
+        try:
+            completion = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": (
+                            _build_feedback_prompt(observation, history, strategy_memory)
+                            if ENABLE_HISTORY
+                            else _build_basic_prompt(observation)
+                        ),
+                    },
+                ],
+                temperature=TEMPERATURE,
+                max_tokens=MAX_RESPONSE_TOKENS,
+                response_format={"type": "json_object"},
+            )
+            content = (completion.choices[0].message.content or "").strip()
+            return _parse_action(content)
+        except Exception as exc:
+            message = str(exc).lower()
+            is_rate_limited = "rate limit" in message or "429" in message
+            if not is_rate_limited or attempt >= MAX_LLM_RETRIES:
+                raise
+            time.sleep(RETRY_BACKOFF_SECONDS * (attempt + 1))
+
+    raise RuntimeError("Failed to get action from LLM after retries.")
 
 
 def choose_action(
@@ -238,11 +260,18 @@ def choose_action(
     strategy_memory: list[str] | None = None,
 ) -> tuple[EnvironmentAction, Optional[str]]:
     if client is None:
+        if not ALLOW_HEURISTIC_FALLBACK:
+            raise RuntimeError(
+                "LLM client is not configured. Set HF_TOKEN/API_BASE_URL/MODEL_NAME, "
+                "or explicitly opt in to fallback with ALLOW_HEURISTIC_FALLBACK=1."
+            )
         return choose_heuristic_action(observation), None
 
     try:
         return _llm_action(client, observation, history, strategy_memory), None
     except Exception as exc:
+        if not ALLOW_HEURISTIC_FALLBACK:
+            raise
         fallback = choose_heuristic_action(observation)
         return fallback, _sanitize_error(str(exc))
 
@@ -348,6 +377,11 @@ def run_task(
 
 def main() -> None:
     client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY) if API_KEY else None
+    if client is None and not ALLOW_HEURISTIC_FALLBACK:
+        raise RuntimeError(
+            "Missing HF_TOKEN/API configuration for LLM mode. "
+            "Set env vars (HF_TOKEN, API_BASE_URL, MODEL_NAME) or set ALLOW_HEURISTIC_FALLBACK=1 explicitly."
+        )
     for task_id in TASK_IDS:
         run_task(task_id, client, emit_logs=True)
 
