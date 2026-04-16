@@ -1,0 +1,131 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\title{Literature Review: Space Debris Collision Avoidance}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Team Details}
+\begin{itemize}[noitemsep]
+    \item Mayank Goyal (Team Leader), Roll No: 24293916114, Email: mayankgoyal18052005@ce.du.ac.in
+    \item Abeer bartaria, Roll No: 23293916061, Email: abeerbartaria@ce.du.ac.in
+    \item Ansh Kumar, Roll No: 24293916052, Email: Anshk3671@gmail.com
+    \item Vansh Saharawat, Roll No: 24293916089, Email: vanshsahara@ce.du.ac.in
+\end{itemize}
+
+\section*{Scope}
+This review covers conjunction assessment and collision avoidance in Earth orbit, aligned with our EDA domain.
+
+\section*{Literature Collection (5 Works)}
+
+\subsection*{1) Chan (2000)}
+\textbf{Source:} Journal of Guidance, Control, and Dynamics \\
+\textbf{DOI:} \url{https://doi.org/10.2514/2.4611}
+\begin{itemize}[noitemsep]
+    \item \textbf{Problem statement:} How to compute collision risk rigorously for close approaches.
+    \item \textbf{Dataset used:} Cataloged space objects and encounter uncertainty states.
+    \item \textbf{Methods applied:} Analytical probability of collision using encounter geometry and covariance.
+    \item \textbf{Key findings:} Probability-based thresholds are better than simple geometric screening rules.
+\end{itemize}
+
+\subsection*{2) Newman et al. (2009)}
+\textbf{Source:} Acta Astronautica \\
+\textbf{DOI:} \url{https://doi.org/10.1016/j.actaastro.2009.10.005}
+\begin{itemize}[noitemsep]
+    \item \textbf{Problem statement:} How to run robotic mission conjunction assessment in operations.
+    \item \textbf{Dataset used:} U.S. tracking catalog conjunction products plus mission trajectory data.
+    \item \textbf{Methods applied:} Multi-stage screening, escalation, analyst review, and maneuver planning.
+    \item \textbf{Key findings:} Layered pipelines reduce false alerts and support practical mission decisions.
+\end{itemize}
+
+\subsection*{3) Flohrer et al. (2009)}
+\textbf{Source:} Advances in Space Research \\
+\textbf{DOI:} \url{https://doi.org/10.1016/j.asr.2009.04.012}
+\begin{itemize}[noitemsep]
+    \item \textbf{Problem statement:} How to identify and assess high-risk conjunction events for ESA missions.
+    \item \textbf{Dataset used:} Daily screenings of tracked objects with orbit prediction and uncertainty data.
+    \item \textbf{Methods applied:} Automated filtering, manual refinement, trend checks, and decision gates.
+    \item \textbf{Key findings:} Staged assessment improves safety while limiting unnecessary maneuvers.
+\end{itemize}
+
+\subsection*{4) Braun et al. (2016)}
+\textbf{Source:} CEAS Space Journal \\
+\textbf{DOI:} \url{https://doi.org/10.1007/s12567-016-0119-3}
+\begin{itemize}[noitemsep]
+    \item \textbf{Problem statement:} How to scale operational collision support across many missions.
+    \item \textbf{Dataset used:} Operational conjunction streams, OD updates, and mission constraints.
+    \item \textbf{Methods applied:} Standardized support workflow and mission-tailored risk handling.
+    \item \textbf{Key findings:} Institutional support improves consistency, but upstream uncertainty remains a major limiter.
+\end{itemize}
+
+\subsection*{5) Weigel et al. (2024)}
+\textbf{Source:} Journal of Guidance, Control, and Dynamics \\
+\textbf{DOI:} \url{https://doi.org/10.2514/1.G008245}
+\begin{itemize}[noitemsep]
+    \item \textbf{Problem statement:} How to make covariance models realistic enough for robust CA decisions.
+    \item \textbf{Dataset used:} Historical mission orbit-estimation and covariance behavior data.
+    \item \textbf{Methods applied:} Consider-covariance calibration and comparative risk-ranking experiments.
+    \item \textbf{Key findings:} Better covariance realism improves event ranking and maneuver timing quality.
+\end{itemize}
+
+\section*{Comparative Analysis with Our EDA}
+
+\subsection*{Our EDA snapshot}
+\begin{itemize}[noitemsep]
+    \item SATCAT cleaned: 68,330 objects.
+    \item UCS cleaned: 7,563 satellites.
+    \item Kelvins labels: 100 records, with long trajectory subsets (deb\_train, deb\_test, sat).
+    \item UCS analysis shows LEO-heavy distribution and Communications-dominant mission purpose.
+    \item Launch trend rises sharply in recent years, especially around 2020 to 2022.
+\end{itemize}
+
+\subsection*{Similarities with literature}
+\begin{itemize}[noitemsep]
+    \item Literature and our EDA both indicate strong growth in orbital traffic and conjunction burden.
+    \item LEO concentration in our UCS data matches operational studies where LEO dominates conjunction workload.
+    \item Data quality and uncertainty are central in both; our cleaning steps already show mixed formats and missingness that impact downstream risk scoring.
+\end{itemize}
+
+\subsection*{Differences from literature}
+\begin{itemize}[noitemsep]
+    \item Literature mostly uses mission-grade conjunction products (for example CDMs and refined covariance chains), while our current datasets are catalog-level and benchmark-oriented.
+    \item Literature includes maneuver authority and mission constraints; our current pipeline is pre-decision and analytics-focused.
+    \item Recent covariance-optimization methods require historical orbit-determination streams not present in our current data bundle.
+\end{itemize}
+
+\section*{Research Gaps and Future Work}
+
+\subsection*{Gap 1: Public end-to-end CA benchmarks are limited}
+Most strong systems are agency internal. Reproducible public benchmarks that cover screening, ranking, and maneuver recommendation are still limited.
+
+\subsection*{Gap 2: Screening and maneuver planning are often disconnected}
+Many workflows optimize each stage separately. A unified objective from first filter to final maneuver can reduce inconsistency.
+
+\subsection*{Gap 3: Uncertainty treatment is still uneven}
+Catalog-level studies often under-model covariance realism. Operational papers show uncertainty quality strongly changes decisions.
+
+\subsection*{Proposed next steps for our project}
+\begin{enumerate}[noitemsep]
+    \item Build a two-stage CA pipeline on top of our processed SATCAT and UCS artifacts: fast screening plus refined probability scoring.
+    \item Add uncertainty-aware modeling inspired by modern covariance calibration work.
+    \item Evaluate with operationally meaningful metrics: false alert rate, unnecessary maneuver rate, and missed-danger events.
+    \item Publish a reproducible benchmark protocol with fixed scenario splits and reporting templates.
+\end{enumerate}
+
+\section*{References}
+\begin{enumerate}
+    \item Chan, F. K. (2000). Probability of Collision Between Space Objects. Journal of Guidance, Control, and Dynamics. \url{https://doi.org/10.2514/2.4611}
+    \item Newman, L. K., et al. (2009). The NASA robotic conjunction assessment process: Overview and operational experiences. Acta Astronautica. \url{https://doi.org/10.1016/j.actaastro.2009.10.005}
+    \item Flohrer, T., Krag, H., and Klinkrad, H. (2009). ESA’s process for the identification and assessment of high-risk conjunction events. Advances in Space Research. \url{https://doi.org/10.1016/j.asr.2009.04.012}
+    \item Braun, V., et al. (2016). Operational support to collision avoidance activities by ESA’s space debris office. CEAS Space Journal. \url{https://doi.org/10.1007/s12567-016-0119-3}
+    \item Weigel, M., et al. (2024). Optimizing Consider-Covariance Models for Realistic Orbit Errors and Application to Collision Avoidance. Journal of Guidance, Control, and Dynamics. \url{https://doi.org/10.2514/1.G008245}
+\end{enumerate}
+
+\end{document}

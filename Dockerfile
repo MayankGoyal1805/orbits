@@ -7,7 +7,7 @@ COPY src /app/src
 COPY server /app/server
 COPY scripts /app/scripts
 
-RUN pip install --no-cache-dir .
+RUN pip install .
 
 EXPOSE 7860
 

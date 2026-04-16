@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import json
+import os
+from pathlib import Path
+
 from orbits_env.models import ConjunctionEvent, GeometryTag, TaskConfig
 
 
-TASKS: dict[str, TaskConfig] = {
+def _base_tasks() -> dict[str, TaskConfig]:
+    return {
     "collision_avoidance_easy": TaskConfig(
         task_id="collision_avoidance_easy",
         difficulty="easy",
@@ -166,7 +171,62 @@ TASKS: dict[str, TaskConfig] = {
             ),
         ],
     ),
-}
+    }
+
+
+def _task_priors_path() -> Path:
+    configured = os.getenv("ORBITS_TASK_PRIORS_PATH")
+    if configured:
+        return Path(configured)
+    return Path(__file__).resolve().with_name("task_priors.json")
+
+
+def _load_task_overrides() -> dict[str, dict]:
+    path = _task_priors_path()
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+    overrides = payload.get("task_overrides")
+    if not isinstance(overrides, dict):
+        return {}
+    return overrides
+
+
+def _apply_single_task_override(task: TaskConfig, override: dict) -> TaskConfig:
+    task_data = task.model_dump()
+    scalar_updates = {k: v for k, v in override.items() if k != "conjunctions"}
+    for key, value in scalar_updates.items():
+        if key in task_data:
+            task_data[key] = value
+
+    conjunction_overrides = override.get("conjunctions", [])
+    if isinstance(conjunction_overrides, list):
+        for idx, conjunction_override in enumerate(conjunction_overrides):
+            if idx >= len(task_data["conjunctions"]) or not isinstance(conjunction_override, dict):
+                continue
+            for key, value in conjunction_override.items():
+                if key in task_data["conjunctions"][idx]:
+                    task_data["conjunctions"][idx][key] = value
+
+    return TaskConfig(**task_data)
+
+
+def _build_tasks() -> dict[str, TaskConfig]:
+    tasks = _base_tasks()
+    overrides = _load_task_overrides()
+    for task_id, override in overrides.items():
+        task = tasks.get(task_id)
+        if task is None or not isinstance(override, dict):
+            continue
+        tasks[task_id] = _apply_single_task_override(task, override)
+    return tasks
+
+
+TASKS: dict[str, TaskConfig] = _build_tasks()
 
 
 def get_task(task_id: str) -> TaskConfig:

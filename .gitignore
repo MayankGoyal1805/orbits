@@ -8,7 +8,7 @@ __pycache__/
 outputs/evals/*.json
 outputs/logs/*.log
 .env.fish
+.env
 AGENTS.md
-/docs
 .env.fish.example
 eda-assignment

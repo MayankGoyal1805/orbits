@@ -78,7 +78,7 @@ Task difficulty progresses from easy to hard, and each task is graded on a norma
 Install dependencies:
 
 ```bash
-UV_CACHE_DIR=/tmp/orbits-uv-cache uv sync
+uv sync
 ```
 
 Run the reproducible heuristic baseline:
@@ -93,6 +93,18 @@ Run the required submission inference script:
 make inference
 ```
 
+Build dataset-driven task priors from EDA artifacts:
+
+```bash
+make build-priors
+```
+
+Run iterative self-improvement inference (Option 1):
+
+```bash
+make iterative-inference
+```
+
 Required inference environment variables:
 
 ```bash
@@ -103,6 +115,8 @@ export HF_TOKEN="<provider-api-key>"
 
 If `HF_TOKEN` is not set, `inference.py` falls back to the deterministic heuristic policy for local development.
 `LOCAL_IMAGE_NAME` is present in `inference.py` for checklist compatibility but is not used in the current local environment path.
+
+`inference.py` optionally loads a local `.env` file for convenience, but production/submission environments with pre-set variables remain the primary source of truth.
 
 Run tests:
 

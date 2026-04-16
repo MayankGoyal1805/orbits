@@ -1,27 +1,31 @@
-UV_CACHE_DIR ?= /tmp/orbits-uv-cache
-
-.PHONY: sync baseline baseline-save inference test serve smoke docker-build docker-run validate
+.PHONY: sync build-priors baseline baseline-save inference iterative-inference test serve smoke docker-build docker-run validate
 
 sync:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv sync
+	uv sync
+
+build-priors:
+	uv run python scripts/build_task_priors.py
 
 baseline:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/run_baseline.py
+	uv run python scripts/run_baseline.py
 
 baseline-save:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/run_baseline.py --output outputs/evals/baseline_scores.json
+	uv run python scripts/run_baseline.py --output outputs/evals/baseline_scores.json
 
 inference:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python inference.py
+	uv run python inference.py
+
+iterative-inference:
+	uv run python scripts/run_iterative_inference.py --rounds 3 --output iterative_inference_results.json
 
 test:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run pytest
+	uv run pytest
 
 serve:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run uvicorn server.app:app --host 0.0.0.0 --port 7860
+	uv run uvicorn server.app:app --host 0.0.0.0 --port 7860
 
 smoke:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python scripts/smoke_test_api.py
+	uv run python scripts/smoke_test_api.py
 
 docker-build:
 	docker build -t orbits-openenv .
