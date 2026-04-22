@@ -118,6 +118,27 @@ In a representative 3-round run with multi-step episodes, round metrics improved
 \item Round 3: avg score 0.5604, avg total reward 1.7286
 \end{itemize}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/round_trends.png}
+\caption{Round-level trends show steady score/reward improvement, while success rate stays flat under strict terminal thresholds.}
+\label{fig:round_trends}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/task_progression.png}
+\caption{Per-task progression across rounds. Medium and hard tasks show stronger reward/score movement than easy.}
+\label{fig:task_progression}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{figures/risk_vs_threshold.png}
+\caption{Observed final highest collision probability versus success thresholds in the best round. Threshold gaps explain persistent zero success.}
+\label{fig:risk_threshold}
+\end{figure}
+
 Despite this, success rate remained 0.00 because residual highest collision probability stayed above strict per-task success thresholds at termination.
 
 \section{Discussion}

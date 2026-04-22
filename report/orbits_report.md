@@ -183,6 +183,18 @@ In a representative 3-round run (`MAX_STEPS > 1`), average score and average tot
 - Round 2: avg score 0.5530, avg total reward 1.6867
 - Round 3: avg score 0.5604, avg total reward 1.7286
 
+Round-level metric evolution:
+
+![Round-level trends](figures/round_trends.png)
+
+Per-task score and reward progression:
+
+![Task progression](figures/task_progression.png)
+
+Best-round final risk compared to success thresholds:
+
+![Risk vs threshold](figures/risk_vs_threshold.png)
+
 ### 8.2 Why Success Stayed Zero
 
 Despite score/reward improvement, all rounds had success rate 0.00 because residual highest collision probability remained above strict per-task success thresholds at termination.
