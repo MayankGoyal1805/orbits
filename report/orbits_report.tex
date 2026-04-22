@@ -1,0 +1,160 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+
+\title{Dataset-Informed Iterative Inference for Space Debris Collision Avoidance in an OpenEnv Benchmark}
+
+\author{\IEEEauthorblockN{Project Report}
+\IEEEauthorblockA{Orbits OpenEnv Study}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This report presents a practical, reproducible approach for collision-avoidance decision support in the Orbits OpenEnv benchmark. The environment models short-horizon conjunction management as a sequential control problem with resource constraints (fuel, tracking budget, and mission-offset limits). We implement an iterative inference pipeline that combines (1) a strict action contract for large language models (LLMs), (2) dataset-informed task priors derived from SATCAT/UCS/Kelvins EDA outputs, and (3) cross-round memory that feeds prior outcomes back into later rounds. The approach is not policy-gradient reinforcement learning; it is reward-informed iterative prompting with structured simulator feedback. We document system design, simulator mechanics, evaluation metrics, model-switching robustness improvements, and observed behavior under multiple model endpoints. Results show measurable improvement in average score and average reward across rounds in representative runs, while binary success can remain zero due to strict terminal thresholds.
+\end{abstract}
+
+\begin{IEEEkeywords}
+space debris, conjunction avoidance, LLM agents, iterative inference, benchmark environments
+\end{IEEEkeywords}
+
+\section{Introduction}
+Space-object conjunction management requires balancing safety and mission continuity under uncertainty. Operators must trade off collision-risk reduction against maneuver cost, mission deviation, and limited tracking resources. This project implements that trade-off in a controlled benchmark environment with a standardized API and inference entrypoint.
+
+The objective is reliable autonomous action selection across three difficulty tiers while preserving reproducibility and operational robustness. The work emphasizes environment transparency, data-informed task calibration, and practical iterative improvement without policy-network retraining.
+
+\section{Problem Formulation}
+Each episode consists of discrete decision steps over a finite horizon. At each step, the agent receives an observation and outputs one action from a fixed set:
+\texttt{noop}, \texttt{request\_tracking\_update}, \texttt{radial\_maneuver}, \texttt{along\_track\_maneuver}, or \texttt{normal\_maneuver}, with magnitude in $[0,1]$.
+
+The simulator tracks conjunction events with collision probability, predicted miss distance, time to closest approach, uncertainty, and axis-specific maneuver effectiveness. The objective is to minimize residual risk while preserving fuel and mission geometry constraints.
+
+\section{System Overview}
+\subsection{Runtime Components}
+Key modules are: simulator core (\texttt{src/orbits\_env/simulator.py}), typed models (\texttt{src/orbits\_env/models.py}), task catalog and priors merge (\texttt{src/orbits\_env/tasks/catalog.py}), grading (\texttt{src/orbits\_env/graders/scoring.py}), inference loop (\texttt{inference.py}), iterative runner (\texttt{scripts/run\_iterative\_inference.py}), and priors builder (\texttt{scripts/build\_task\_priors.py}).
+
+\subsection{Difficulty Tiers}
+Table~\ref{tab:difficulty} summarizes baseline difficulty parameters before priors override.
+
+\begin{table}[htbp]
+\caption{Baseline Difficulty Configuration}
+\label{tab:difficulty}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Parameter & Easy & Medium & Hard \\
+\midrule
+Horizon & 6 & 8 & 10 \\
+Initial fuel & 9.5 & 8.0 & 7.2 \\
+Initial tracking quality & 0.82 & 0.68 & 0.57 \\
+Tracking budget & 2 & 2 & 3 \\
+Success threshold & 0.18 & 0.24 & 0.28 \\
+Max offset (km) & 2.4 & 2.1 & 1.9 \\
+Conjunction count & 1 & 2 & 3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Difficulty rises by reducing certainty/resources and increasing multi-threat planning pressure.
+
+\section{Simulator Mechanics (Physics Proxy)}
+The benchmark uses a structured proxy model rather than high-fidelity orbital propagation. It does not maintain explicit Cartesian position/velocity state or integrate orbital dynamics directly.
+
+\subsection{Step Dynamics}
+At each step, the simulator applies action effects, updates resources, advances passive dynamics, increments step index, and checks termination. Passive updates include tracking-quality decay, uncertainty drift, collision-probability growth pressure, miss-distance erosion, and countdown of time-to-closest-approach.
+
+\subsection{Horizon and Termination}
+Episodes terminate if any of the following is true: fuel exhaustion, mission-deviation limit exceeded, imminent collision threshold crossed, all events resolved, or horizon reached.
+
+\subsection{Success Boolean}
+At episode end, success is true only when both conditions hold:
+\begin{equation}
+\max_i p_i \leq \tau_{\text{success}} \quad \land \quad o_{\text{total}} \leq o_{\max}
+\end{equation}
+where $p_i$ is residual collision probability for conjunction $i$, and $o_{\text{total}}$ is total mission offset.
+
+This strict gate explains why score can improve while success remains zero.
+
+\section{LLM Interface and Robustness}
+\subsection{Prompt Contract}
+Per decision, the LLM receives current observation payload, strategy notes, recent in-episode history (including per-step reward), and optional cross-round memory. The model must return strict JSON:
+\begin{verbatim}
+{"action_type":"radial_maneuver","magnitude":0.52}
+\end{verbatim}
+
+\subsection{Output Validation and Recovery}
+To support heterogeneous providers/models, the stack attempts provider JSON mode first, then retries plain completion and parses locally if needed. Guardrails handle mixed text outputs, malformed JSON, and fallback parsing.
+
+\subsection{Provider Switching Hardening}
+Enhancements include multi-key environment resolution, best-effort model availability preflight, and explicit model-not-found / rate-limit errors.
+
+\section{Dataset-Informed Priors}
+Task priors are derived from processed SATCAT, UCS, and Kelvins labels datasets and merged through \texttt{task\_priors.json}. Current overrides include initial tracking quality, success threshold, conjunction uncertainty, risk growth rate, and tracking sensitivity.
+
+Kelvins long trajectory tables are not yet used for prior generation in the current implementation.
+
+\section{Iterative Inference Across Rounds}
+\subsection{Cross-Round Memory}
+Round $r+1$ receives prior round summaries (average score, average reward, success rate), per-task outcomes (including total reward and first action), and adaptive reflection notes.
+
+This is reward-informed iterative prompting, not parameter-updating reinforcement learning.
+
+\subsection{Effect of Max Steps}
+When \texttt{MAX\_STEPS=1}, each episode has only one action opportunity. In this setting, cross-round adaptation is strongly constrained and rounds can look identical.
+
+\section{Experimental Observations}
+In a representative 3-round run with multi-step episodes, round metrics improved:
+
+\begin{itemize}
+\item Round 1: avg score 0.5451, avg total reward 1.6429
+\item Round 2: avg score 0.5530, avg total reward 1.6867
+\item Round 3: avg score 0.5604, avg total reward 1.7286
+\end{itemize}
+
+Despite this, success rate remained 0.00 because residual highest collision probability stayed above strict per-task success thresholds at termination.
+
+\section{Discussion}
+The system provides a robust engineering baseline for LLM-driven sequential control with clear interfaces and reproducible evaluation. The most important interpretation point is the distinction between dense reward progression, smooth scalar score, and strict binary success.
+
+Iterative prompting can improve outcomes, but may plateau when action diversity is low or horizon is short.
+
+\section{Limitations and Future Work}
+Current limitations include lack of true policy learning, proxy dynamics instead of explicit orbital propagation, partial dataset feature utilization, and threshold-sensitive success labeling.
+
+Planned extensions:
+\begin{itemize}
+\item Gym-compatible wrapper and PPO/A2C/SAC baselines.
+\item Success-aware reward shaping and multi-objective calibration.
+\item Trajectory-derived temporal priors from Kelvins long tables.
+\item Larger ablations across models, prompts, and retry policies.
+\end{itemize}
+
+\section{Reproducibility}
+Recommended commands:
+\begin{verbatim}
+uv sync
+make build-priors
+MAX_STEPS=6 ITERATIVE_ROUNDS=3 make iterative-inference
+\end{verbatim}
+
+Primary artifacts are \texttt{iterative\_inference\_results.json} and \texttt{output.txt}.
+
+\begin{thebibliography}{00}
+\bibitem{openenv} OpenEnv metadata and repository files in this project (\texttt{openenv.yaml}, \texttt{README.md}).
+\bibitem{vallado} D. Vallado, \textit{Fundamentals of Astrodynamics and Applications}, 4th ed., Microcosm Press, 2013.
+\bibitem{klinkrad} H. Klinkrad, \textit{Space Debris: Models and Risk Analysis}, Springer, 2006.
+\bibitem{nasa_cara} NASA CARA resources, NASA Orbital Debris Program Office.
+\bibitem{satcat} SATCAT public catalog resources used in EDA preprocessing.
+\bibitem{ucs} UCS Satellite Database resources used in EDA preprocessing.
+\bibitem{kelvins} Kelvins collision-avoidance challenge resources used in EDA preprocessing.
+\bibitem{brown2020} T. Brown \textit{et al.}, ``Language Models are Few-Shot Learners,'' \textit{NeurIPS}, 2020.
+\end{thebibliography}
+
+\end{document}
