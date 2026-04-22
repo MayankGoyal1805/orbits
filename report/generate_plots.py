@@ -90,6 +90,39 @@ def _plot_task_total_reward(results: dict) -> None:
     plt.close(fig)
 
 
+def _plot_task_score_offset(results: dict) -> None:
+    rounds = results.get("rounds", [])
+    task_ids = sorted({t["task_id"] for r in rounds for t in r.get("tasks", [])})
+    x = [r["round"] for r in rounds]
+
+    offsets_by_task: dict[str, list[float]] = {task_id: [] for task_id in task_ids}
+
+    for round_item in rounds:
+        task_map = {t["task_id"]: t for t in round_item.get("tasks", [])}
+        for task_id in task_ids:
+            task = task_map[task_id]
+            offsets_by_task[task_id].append(float(task["total_offset_km"]))
+
+    fig, ax = plt.subplots(figsize=(7.8, 3.8), dpi=170)
+    colors = ["#1f77b4", "#2ca02c", "#ff7f0e"]
+
+    for idx, task_id in enumerate(task_ids):
+        label = task_id.replace("collision_avoidance_", "")
+        color = colors[idx % len(colors)]
+        ax.plot(x, offsets_by_task[task_id], marker="o", linewidth=2.3, label=label, color=color)
+
+    ax.set_title("Task Mission Offset Across Rounds")
+    ax.set_xlabel("Round")
+    ax.set_ylabel("Total Offset (km)")
+    ax.set_xticks(x)
+    ax.grid(alpha=0.35, linestyle="--", linewidth=0.8)
+
+    ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.01, 0.5), borderaxespad=0.0)
+    fig.tight_layout(rect=[0.0, 0.0, 0.84, 1.0])
+    fig.savefig(FIG_DIR / "output_task_score_offset.png", bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> None:
     _set_style()
     FIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -97,6 +130,7 @@ def main() -> None:
 
     _plot_round_score_reward(results)
     _plot_task_total_reward(results)
+    _plot_task_score_offset(results)
     print(f"Wrote plots to {FIG_DIR}")
 
 

@@ -189,6 +189,8 @@ Output-data visuals used in the report:
 
 ![Output task total reward by round](figures/output_task_reward.png)
 
+![Output task mission offset trends](figures/output_task_score_offset.png)
+
 ### 8.2 Why Success Stayed Zero
 
 Despite score/reward improvement, all rounds had success rate 0.00 because residual highest collision probability remained above strict per-task success thresholds at termination.
