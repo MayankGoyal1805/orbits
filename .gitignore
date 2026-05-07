@@ -11,4 +11,5 @@ outputs/logs/*.log
 .env
 AGENTS.md
 .env.fish.example
-eda-assignment
+
+temp/
